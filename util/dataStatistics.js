@@ -34,7 +34,6 @@ class DataStatistics {
       });
     this.updateTime = moment();
     this.lastSaveTime = moment();
-    this.setSafeHead();
     // 针对 urlsMap 接口做一个特殊的计数
     this.urlsMap = {};
     // 全部数据读取
@@ -53,15 +52,6 @@ class DataStatistics {
     });
   }
 
-  setSafeHead() {
-    const date = Number(moment().format('YYYYMMDD'));
-    this.safeHead = {
-      [Buffer.from(String(date)).toString('base64')]: true,
-      [Buffer.from(String(date - 1)).toString('base64')]: true,
-      [Buffer.from(String(date + 1)).toString('base64')]: true,
-    }
-  }
-
   // 记录数据保存为 json 文件
   saveInfo() {
     const lt = this.lastSaveTime.format('YYYYMMDD');
@@ -69,7 +59,6 @@ class DataStatistics {
     const now = moment().valueOf();
     if (lt !== nt) {
       jsonFile.writeFile(`data/record/${lt}.json`, this.allData[lt] || []);
-      this.safeHead();
       // 每天清一下 tempList
       Object.keys(this.tempList).forEach(k => {
         this.tempList[k] = this.tempList[k].filter((v) => v > (now - 3600000 * 6));
@@ -102,17 +91,18 @@ class DataStatistics {
         errMsg: `你是不是接口访问次数太多了，${t.format('YYYY-MM-DD HH:mm:ss')}之前不能再用了！`,
       })
     }
-
+    ``
     // 找不到 ip 指向本地的就算了
     if (ip === '::ffff:127.0.0.1' || ip === '::1') {
       return next();
     }
-    if ({ okhttp: true }[agent.family] || { Other: true }[os.family] ) {
-      return res.send({
-        result: 400,
-        errMsg: `自己起一个 node 服务 这么难？？?`
-      })
-    }
+    // if ({ okhttp: true }[agent.family] || { Other: true }[os.family]) {
+    //   return res.send({
+    //     result: 400,
+    //     errMsg: `自己起一个 node 服务 这么难？？?`
+    //   })
+    // }
+
     const data = {
       browser: agent.family,
       browserVersion: agent.browserVersion,
@@ -143,9 +133,6 @@ class DataStatistics {
     const now = this.updateTime.valueOf();
     const ipArr = ip.split('.');
     const preIp = `${ipArr[0]}.${ipArr[1]}`;
-    const isSafeHead = this.safeHead[req.headers['host-check']];
-    let base = isSafeHead ? 1 : 0.2;
-
     if (this.whiteList[ip]) {
       return true;
     }
@@ -164,17 +151,17 @@ class DataStatistics {
 
     // 过去1分钟、10分钟、1小时
     const last1M = list.filter((v) => v > (now - 60000));
-    if (last1M.length >= 150 * base) {
-      this.addList(ip, 'blackList', moment().add(-24 * 60 + 10, 'm').valueOf());
+    if (last1M.length >= 100) {
+      this.addList(ip, 'blackList');
       return false;
     }
     const last10M = list.filter((v) => v > (now - 60000 * 10));
-    if (last10M.length >= 800 * base) {
-      this.addList(ip, 'blackList', moment().add(-23, 'H').valueOf());
+    if (last10M.length >= 500) {
+      this.addList(ip, 'blackList');
       return false;
     }
     const last1H = list.filter((v) => v > (now - 360000));
-    if (last1H.length >= 2000 * base) {
+    if (last1H.length >= 2000) {
       this.addList(ip, 'blackList');
       return false;
     }
@@ -203,7 +190,7 @@ class DataStatistics {
 
   // 获取黑名单加入时间
   getBlackTime(ip) {
-    return moment(Number(this.blackList[ip])+ 86400000);
+    return moment(Number(this.blackList[ip]) + 86400000);
   }
 
   // 加入 黑/白 名单
@@ -234,10 +221,10 @@ class DataStatistics {
 
   // 读取数据记录
   getRecord({
-     startTime = moment().format('YYYYMMDD'),
-     endTime = moment().format('YYYYMMDD'),
-     type,
-     condition = '{}',
+    startTime = moment().format('YYYYMMDD'),
+    endTime = moment().format('YYYYMMDD'),
+    type,
+    condition = '{}',
   }) {
     let time = moment(startTime).format('YYYYMMDD');
     const endStr = moment(endTime).format('YYYYMMDD');
@@ -254,7 +241,7 @@ class DataStatistics {
         });
         return result;
       })
-    } catch (err) {}
+    } catch (err) { }
     const result = {};
     do {
       const list = this.allData[time] || [];

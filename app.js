@@ -8,78 +8,83 @@ const DataStatistics = require('./util/dataStatistics');
 const jsonFile = require('jsonfile');
 const Feedback = require('./util/feedback');
 const Cache = require('./util/cache');
-const config = require('./bin/config');
-const Request = require('./util/request');
-const GlobalCookie = require('./util/globalCookie');
+// var jwt = require('express-jwt');
+var cors = require('cors');
+
 
 const app = express();
 const dataHandle = new DataStatistics();
-const feedback = new Feedback();
-const cache = new Cache();
-const globalCookie = GlobalCookie();
+global.dataStatistics = dataHandle;
+global.feedback = new Feedback();
+global.cache = new Cache();
 
+jsonFile.readFile('data/allCookies.json')
+  .then((res) => {
+    global.allCookies = res;
+  }, (err) => {
+    global.allCookies = {};
+  });
 
-// 每10分钟存一下数据
-config.useDataStatistics && setInterval(() => dataHandle.saveInfo(), 60000 * 10);
+jsonFile.readFile('data/cookie.json')
+  .then((res) => {
+    global.userCookie = res;
+  }, (err) => {
+    global.userCookie = {}
+  });
+
+// 每5分钟存一下数据
+setInterval(() => dataHandle.saveInfo(), 60000 * 5);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
-app.use(cookieParser());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors({
+  origin: ['http://localhost:8080',
+  'http://127.0.0.1:5500', 
+  'http://alivemusic.dreamsakula.top:3300', 
+  'http://alivemusic.dreamsakula.top'
+  ],  //指定接收的地址
+  methods: ['GET', 'POST'],  //指定接收的请求类型
+  alloweHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']  //指定header
+}))
+// app.use(jwt({
+//   secret: '123123',
+//   algorithms: ['HS256']
+// }).unless({
+//   path: [
+//     '/user/login',
+//     '/register'
+//   ]
+// }));
 
-config.useDataStatistics && app.use((req, res, next) => dataHandle.record(req, res, next));
+app.use((req, res, next) => dataHandle.record(req, res, next));
+// 
 
-const corsMap = {
-  '/user/setCookie': true,
-}
-fs.readdirSync(path.join(__dirname, 'routes')).forEach(file => {
+fs.readdirSync(path.join(__dirname, 'routes')).reverse().forEach(file => {
   const filename = file.replace(/\.js$/, '');
-  const RouterMap = require(`./routes/${filename}`);
-  Object.keys(RouterMap).forEach((path) => {
-    app.use(`/${filename}${path}`, (req, res, next) => {
-      const router = express.Router();
-      const request = Request(req, res, {globalCookie})
-      req.query = {
-        ...req.query,
-        ...req.body,
-        ownCookie: 1,
-      };
-      // qq 登录
-      let uin = (req.cookies.uin || '');
-      // login_type 2 微信登录
-      if (Number(req.cookies.login_type) === 2) {
-        uin = req.cookies.wxuin;
-      }
-      req.cookies.uin = uin.replace(/\D/g, '');
-      const func = RouterMap[path];
-
-      const args = {request, dataStatistics: dataHandle, feedback, cache, globalCookie};
-      router.post('/', (req, res) => func({req, res, ...args}));
-      router.get('/', (req, res) => func({req, res, ...args}));
-      if (corsMap[`/${filename}${path}`]) {
-        router.options('/', (req, res) => {
-          res.set('Access-Control-Allow-Origin', 'https://y.qq.com');
-          res.set('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-          res.set('Access-Control-Allow-Headers', 'Content-Type');
-          res.set('Access-Control-Allow-Credentials', 'true');
-          res.sendStatus(200);
-        })
-      }
-      router(req, res, next);
-    })
+  app.use(`/${filename}`, (req, res, next) => {
+    global.response = res;
+    global.req = req;
+    req.query = {
+      ...req.query,
+      ...req.body,
+    };
+    req.cookies.uin = (req.cookies.uin || '').replace(/\D/g, '');
+    const callback = require(`./routes/${filename}`);
+    callback(req, res, next);
   });
 });
 
-app.use('/', (req, res, next) => {
-  const router = express.Router();
-  router.get('/', (req, res) => require('./routes/index')['/'](req, res))
-  router(req, res, next);
-});
+app.use('/', require('./routes/index'));
+
+
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

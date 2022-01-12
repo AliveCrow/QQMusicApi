@@ -1,3 +1,9 @@
+/*
+ * @Description: 输入文件描述信息
+ * @Author: liu-wb
+ * @Date: 2022-01-12 14:55:41
+ * @LastEditTime: 2022-01-12 14:55:42
+ */
 module.exports = (obj) => {
   let str = obj;
   if (typeof obj === 'object') {
