@@ -2,7 +2,7 @@
  * @Description: 输入文件描述信息
  * @Author: liu-wb
  * @Date: 2022-01-12 13:54:55
- * @LastEditTime: 2022-01-12 14:37:52
+ * @LastEditTime: 2022-01-14 19:00:57
  */
 const puppeteer = require('puppeteer')
 const login = async (data) => {
@@ -49,9 +49,8 @@ const login = async (data) => {
     // await $ptloginFrame.waitForTimeout(3000)
     await page.waitForTimeout(3000)
     let cookie = await page.evaluate(() => document.cookie);
-    console.log("cookie :" + cookie);
     const cookies = await page.cookies()
-    await browser.close()
+    browser.close()
     return cookie
   } catch (e) {
     await browser.close()

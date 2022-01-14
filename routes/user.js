@@ -24,7 +24,7 @@ router.get('/getCookie', (req, res) => {
   }
 
   const cookieObj = global.allCookies[id] || [];
-  
+
   Object.keys(cookieObj).forEach((k) => {
     res.cookie(k, cookieObj[k], { expires: new Date(Date.now() + 86400000) });
   });
@@ -41,10 +41,10 @@ router.post('/setCookie', (req, res) => {
     const arr = c.split('=');
     userCookie[arr[0]] = arr[1];
   });
-    if (userCookie.login_type === '2') {
+  if (userCookie.login_type === '2') {
     //是微信登录
     userCookie.uin = userCookie.wxuin
-    
+
   }
   userCookie.uin = (userCookie.uin || '').replace(/\D/g, '');
   global.allCookies[userCookie.uin] = userCookie;
@@ -170,7 +170,7 @@ router.get('/songlist', async (req, res) => {
       }
       result.data.disslist.unshift(favDiss);
     } catch (err) {
-      
+
     }
   }
   return res.send({
@@ -437,15 +437,18 @@ router.get('/fans', async (req, res) => {
 
 router.post('/login', async (req, res, next) => {
   let username = req.query.username
-  
+
   let password = req.query.password
-  
-  var login = require('../util/login')
-  const cookies = await login({
-    username: username,
-    password: password
-  })
-  
+  let cookies
+  try {
+    var login = require('../util/login')
+    cookies = await login({
+      username: username,
+      password: password
+    })
+  } catch (error) {
+  }
+
   return res.json({
     username: username,
     password: password,
@@ -465,8 +468,8 @@ router.post('/register', async (req, res, next) => {
   })
 })
 
-router.post('/refresh',async (req, res, next) => {
-  const {uin, qm_keyst, qqmusic_key} = req.query.cookies
+router.post('/refresh', async (req, res, next) => {
+  const { uin, qm_keyst, qqmusic_key } = req.query.cookies
   if (!uin || !(qm_keyst || qqmusic_key)) {
     return res.send({
       result: 301,
@@ -490,15 +493,15 @@ router.post('/refresh',async (req, res, next) => {
   };
   const getSign = require('../util/sign');
   const sign = getSign(data);
-  
+
   let url = `https://u6.y.qq.com/cgi-bin/musics.fcg?sign=${sign}&format=json&inCharset=utf8&outCharset=utf-8&data=${encodeURIComponent(
     JSON.stringify(data)
   )}`;
-  const result = await request({url})
+  const result = await request({ url })
   if (result.req1 && result.req1.data && result.req1.data.musickey) {
     const musicKey = result.req1.data.musickey;
     ['qm_keyst', 'qqmusic_key'].forEach((k) => {
-      res.cookie(k, musicKey, {expires: new Date(Date.now() + 86400000)})
+      res.cookie(k, musicKey, { expires: new Date(Date.now() + 86400000) })
     })
     return res.send({
       result: 100,
