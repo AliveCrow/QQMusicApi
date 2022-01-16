@@ -26,8 +26,14 @@ router.get('/', async (req, res) => {
   if (cacheData) {
     return res.send(cacheData);
   }
+  // const url = {
+  //   0: 'https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp',
+  //   2: `https://c.y.qq.com/soso/fcgi-bin/client_music_search_songlist?remoteplace=txt.yqq.playlist&page_no=${pageNo - 1}&num_per_page=${pageSize}&query=${key}`,
+  //   // 3: 'http://c.y.qq.com/soso/fcgi-bin/client_search_user',
+  // }[t] || 'http://c.y.qq.com/soso/fcgi-bin/client_search_cp';
+
   const url = {
-    0: 'https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp',
+    // 0: 'https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp',
     2: `https://c.y.qq.com/soso/fcgi-bin/client_music_search_songlist?remoteplace=txt.yqq.playlist&page_no=${pageNo - 1}&num_per_page=${pageSize}&query=${key}`,
     // 3: 'http://c.y.qq.com/soso/fcgi-bin/client_search_user',
   }[t] || 'http://c.y.qq.com/soso/fcgi-bin/client_search_cp';
@@ -78,7 +84,6 @@ router.get('/', async (req, res) => {
   if (Number(raw)) {
     return res.send(result);
   }
-
   // 下面是数据格式的美化
   const { keyword } = result.data;
   const keyMap = {
