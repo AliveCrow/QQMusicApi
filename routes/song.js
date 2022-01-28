@@ -5,7 +5,6 @@ const request = require('../util/request');
 router.get('/', async (req, res, next) => {
   const url = "http://u.y.qq.com/cgi-bin/musicu.fcg";
   const { songmid, raw } = req.query;
-
   if (!songmid) {
     return res.send({
       result: 500,

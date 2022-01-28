@@ -47,9 +47,10 @@ app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({
   origin: ['http://localhost:8080',
-  'http://127.0.0.1:5500', 
-  'http://alivemusic.dreamsakula.top:3300', 
-  'http://alivemusic.dreamsakula.top'
+    'http://127.0.0.1:5500',
+    'http://localhost:8081',
+    'http://alivemusic.dreamsakula.top:3300',
+    'http://alivemusic.dreamsakula.top'
   ],  //指定接收的地址
   methods: ['GET', 'POST'],  //指定接收的请求类型
   alloweHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']  //指定header
